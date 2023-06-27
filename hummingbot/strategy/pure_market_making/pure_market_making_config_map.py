@@ -379,6 +379,13 @@ pure_market_making_config_map = {
                   default=float(5),
                   type_str="float",
                   validator=lambda v: validate_decimal(v, Decimal("0.5"))),
+    "custom_api_max_price_age":
+        ConfigVar(key="custom_api_max_price_age",
+                  prompt="Enter custom API max price age in seconds (default: 60.0, min: 5.0) >>> ",
+                  required_if=lambda: False,
+                  default=float(60),
+                  type_str="float",
+                  validator=lambda v: validate_decimal(v, Decimal("5.0"))),
     "order_override":
         ConfigVar(key="order_override",
                   prompt=None,
