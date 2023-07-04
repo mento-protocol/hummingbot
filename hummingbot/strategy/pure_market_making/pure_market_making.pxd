@@ -74,6 +74,7 @@ cdef class PureMarketMakingStrategy(StrategyBase):
     cdef c_apply_order_optimization(self, object proposal)
     cdef c_apply_add_transaction_costs(self, object proposal)
     cdef bint c_is_within_tolerance(self, list current_prices, list proposal_prices)
+    cdef c_cancel_all_active_orders(self)
     cdef c_cancel_active_orders(self, object proposal)
     cdef c_cancel_orders_below_min_spread(self)
     cdef c_cancel_active_orders_on_max_age_limit(self)

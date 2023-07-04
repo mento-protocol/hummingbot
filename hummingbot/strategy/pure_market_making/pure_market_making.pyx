@@ -737,6 +737,16 @@ cdef class PureMarketMakingStrategy(StrategyBase):
                                           f"making may be dangerous when markets or networks are unstable.")
 
             proposal = None
+            ref_price_available = not self.get_price().is_nan()
+            if not ref_price_available:
+                self.logger().info("Reference price not available. Waiting for a new price to resume strategy...")
+
+                if len(self.active_orders) > 0:
+                    self.logger().info("Cancelling all active orders for safety...")
+                    self.c_cancel_all_active_orders()
+
+                return
+
             if self._create_timestamp <= self._current_timestamp:
                 # 1. Create base order proposals
                 proposal = self.c_create_base_proposal()
@@ -1172,6 +1182,16 @@ cdef class PureMarketMakingStrategy(StrategyBase):
             if abs(proposal - current)/current > self._order_refresh_tolerance_pct:
                 return False
         return True
+
+    cdef c_cancel_all_active_orders(self):
+        """
+        Cancels all active orders
+        """
+        cdef:
+            list orders = self.active_orders
+
+        for order in orders:
+            self.c_cancel_order(self._market_info, order.client_order_id)
 
     cdef c_cancel_active_orders_on_max_age_limit(self):
         """
