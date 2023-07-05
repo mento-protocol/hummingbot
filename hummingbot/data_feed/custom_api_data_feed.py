@@ -42,6 +42,22 @@ class CustomAPIDataFeed(NetworkBase):
         return "custom_api"
 
     @property
+    def api_url(self):
+        return self._api_url
+
+    @property
+    def update_interval(self):
+        return self._update_interval
+
+    @property
+    def max_price_age(self):
+        return self._max_price_age
+
+    @property
+    def last_updated_timestamp(self):
+        return self._last_updated_timestamp
+
+    @property
     def health_check_endpoint(self):
         return self._api_url
 
