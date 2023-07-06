@@ -124,7 +124,7 @@ price_source_custom_api: null
 # An interval time in second to update the price from custom api (for custom_api pricing source).
 custom_api_update_interval: null
 
-# A maximum age in seconds before invalidating the price from custom api (for custom_api pricing source).
+# A time age in seconds before invalidating the price from custom api if stale (for custom_api pricing source).
 custom_api_max_price_age: null
 
 #Take order if they cross order book when external price source is enabled

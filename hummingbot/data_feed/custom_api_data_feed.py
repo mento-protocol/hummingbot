@@ -21,8 +21,8 @@ class CustomAPIDataFeed(NetworkBase):
             cls.cadf_logger = logging.getLogger(__name__)
         return cls.cadf_logger
 
-    def __init__(self, api_url, update_interval: float = 5.0, max_price_age: float = 60.0):
-        if max_price_age < update_interval:
+    def __init__(self, api_url, update_interval: float = 5.0, max_price_age: int = -1):
+        if max_price_age > 0 and max_price_age < update_interval:
             raise ValueError("max_price_age cannot be less than update_interval.")
 
         super().__init__()
@@ -33,9 +33,9 @@ class CustomAPIDataFeed(NetworkBase):
         self._ev_loop = asyncio.get_event_loop()
         self._price: Decimal = Decimal("0")
         self._update_interval: float = update_interval
-        self._max_price_age: float = max_price_age
+        self._max_price_age: int = max_price_age
         self._fetch_price_task: Optional[asyncio.Task] = None
-        self._last_updated_timestamp: float = None
+        self._last_updated_timestamp: int = None
 
     @property
     def name(self):
@@ -75,11 +75,12 @@ class CustomAPIDataFeed(NetworkBase):
         return NetworkStatus.CONNECTED
 
     def get_price(self) -> Decimal:
-        if self._last_updated_timestamp is not None:
-            age = time.time() - self._last_updated_timestamp
+        if self._max_price_age > 0 and self._last_updated_timestamp is not None:
+            age = int(time.time()) - self._last_updated_timestamp
             if age > self._max_price_age:
                 # price is too old to be considered valid
                 return Decimal("nan")
+
         return self._price
 
     async def fetch_price_loop(self):
@@ -102,7 +103,7 @@ class CustomAPIDataFeed(NetworkBase):
             if resp.status != 200:
                 raise Exception(f"Custom API Feed {self.name} server error: {resp_text}")
             self._price = Decimal(str(resp_text))
-            self._last_updated_timestamp = time.time()
+            self._last_updated_timestamp = int(time.time())
         self._ready_event.set()
 
     async def start_network(self):
