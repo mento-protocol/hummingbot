@@ -386,7 +386,7 @@ pure_market_making_config_map = {
                   required_if=lambda: False,
                   default=int(-1),
                   type_str="int",
-                  validator=lambda v: validate_int(v, 1)),
+                  validator=lambda v: v == -1 or validate_int(v, 1)),
     "order_override":
         ConfigVar(key="order_override",
                   prompt=None,
