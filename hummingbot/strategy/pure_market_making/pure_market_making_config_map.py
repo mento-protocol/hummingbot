@@ -79,6 +79,16 @@ def validate_price_floor_ceiling(value: str) -> Optional[str]:
         return "Value must be more than 0 or -1 to disable this feature."
 
 
+def validate_custom_api_max_price_age(value: int) -> Optional[str]:
+    try:
+        value = int(value)
+    except Exception:
+        return f"{value} is not in integer format."
+
+    if value != -1:
+        return validate_int(value, min_value=1)
+
+
 def validate_price_type(value: str) -> Optional[str]:
     error = None
     price_source = pure_market_making_config_map.get("price_source").value
@@ -386,7 +396,7 @@ pure_market_making_config_map = {
                   required_if=lambda: False,
                   default=int(-1),
                   type_str="int",
-                  validator=lambda v: None if v == -1 else validate_int(v, 1)),
+                  validator=lambda v: validate_custom_api_max_price_age(v)),
     "order_override":
         ConfigVar(key="order_override",
                   prompt=None,

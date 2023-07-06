@@ -3,13 +3,14 @@ from copy import deepcopy
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.strategy.pure_market_making.pure_market_making_config_map import (
-    pure_market_making_config_map as pmm_config_map,
-    on_validate_price_source,
-    validate_price_type,
-    order_amount_prompt,
     maker_trading_pair_prompt,
+    on_validate_price_source,
+    order_amount_prompt,
+    pure_market_making_config_map as pmm_config_map,
+    validate_custom_api_max_price_age,
+    validate_decimal_list,
     validate_price_source_exchange,
-    validate_decimal_list
+    validate_price_type,
 )
 
 
@@ -126,3 +127,15 @@ class TestPMMConfigMap(unittest.TestCase):
         error = validate_decimal_list(value="asd")
         expected = "Please enter valid decimal numbers"
         self.assertEqual(expected, error)
+
+    def test_validate_custom_api_max_price_age(self):
+        self.assertEqual(
+            validate_custom_api_max_price_age(value="0"),
+            "Value cannot be less than 1."
+        )
+        self.assertEqual(
+            validate_custom_api_max_price_age(value="invalidNumber"),
+            "invalidNumber is not in integer format."
+        )
+        self.assertIsNone(validate_custom_api_max_price_age(value="-1"))
+        self.assertIsNone(validate_custom_api_max_price_age(value="10"))
