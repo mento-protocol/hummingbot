@@ -391,8 +391,9 @@ pure_market_making_config_map = {
                   validator=lambda v: validate_decimal(v, Decimal("0.5"))),
     "custom_api_max_price_age":
         ConfigVar(key="custom_api_max_price_age",
-                  prompt="Enter a time in seconds to invalidate the price from custom API if stale "
-                         "(Enter -1 to deactivate this feature) >>> ",
+                  prompt="Enter the number of seconds after which a price from the custom API becomes stale"
+                                 "(default: -1, prices never expire) >>>",
+
                   required_if=lambda: False,
                   default=int(-1),
                   type_str="int",
