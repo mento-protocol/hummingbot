@@ -52,6 +52,7 @@ def start(self):
         price_source_market = c_map.get("price_source_market").value
         price_source_custom_api = c_map.get("price_source_custom_api").value
         custom_api_update_interval = c_map.get("custom_api_update_interval").value
+        custom_api_max_price_age = c_map.get("custom_api_max_price_age").value
         order_refresh_tolerance_pct = c_map.get("order_refresh_tolerance_pct").value / Decimal('100')
         order_override = c_map.get("order_override").value
         split_order_levels_enabled = c_map.get("split_order_levels_enabled").value
@@ -91,7 +92,7 @@ def start(self):
             asset_price_delegate = OrderBookAssetPriceDelegate(ext_market, asset_trading_pair)
         elif price_source == "custom_api":
             asset_price_delegate = APIAssetPriceDelegate(self.markets[exchange], price_source_custom_api,
-                                                         custom_api_update_interval)
+                                                         custom_api_update_interval, custom_api_max_price_age)
         inventory_cost_price_delegate = None
         if price_type == "inventory_cost":
             db = HummingbotApplication.main_application().trade_fill_db

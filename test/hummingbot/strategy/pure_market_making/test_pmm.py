@@ -1116,6 +1116,20 @@ class PMMUnitTest(unittest.TestCase):
         self.assertEqual(Decimal("102.01"), sell.price)
         self.assertEqual(1, sell.quantity)
 
+    def test_active_orders_are_canceled_when_ref_price_is_nan(self):
+        strategy = self.custom_price_source_strategy
+        self.clock.add_iterator(strategy)
+
+        self.clock.backtest_til(self.start_timestamp + self.clock_tick_size)
+        self.assertEqual(1, len(strategy.active_buys))
+        self.assertEqual(1, len(strategy.active_sells))
+
+        self.custom_asset_price_delegate.set_mock_price(mock_price=Decimal("NaN"))
+
+        self.clock.backtest_til(self.start_timestamp + self.clock_tick_size + 1)
+        self.assertEqual(0, len(strategy.active_buys))
+        self.assertEqual(0, len(strategy.active_sells))
+
     def test_no_new_orders_created_until_previous_orders_cancellation_confirmed(self):
         strategy = self.one_level_strategy
         self.clock.add_iterator(strategy)

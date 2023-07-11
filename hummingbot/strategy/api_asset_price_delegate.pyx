@@ -2,13 +2,15 @@ from decimal import Decimal
 
 from hummingbot.core.data_type.common import PriceType
 from hummingbot.data_feed.custom_api_data_feed import CustomAPIDataFeed, NetworkStatus
+
 from .asset_price_delegate cimport AssetPriceDelegate
 
+
 cdef class APIAssetPriceDelegate(AssetPriceDelegate):
-    def __init__(self, market: ExchangeBase, api_url: str, update_interval: float = 5.0):
+    def __init__(self, market: ExchangeBase, api_url: str, update_interval: float = 5.0, max_price_age: int = -1):
         super().__init__()
         self._market = market
-        self._custom_api_feed = CustomAPIDataFeed(api_url=api_url, update_interval=update_interval)
+        self._custom_api_feed = CustomAPIDataFeed(api_url=api_url, update_interval=update_interval, max_price_age=max_price_age)
         self._custom_api_feed.start()
 
     def get_price_by_type(self, _: PriceType) -> Decimal:

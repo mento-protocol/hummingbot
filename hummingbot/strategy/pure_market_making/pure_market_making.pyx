@@ -7,27 +7,37 @@ import numpy as np
 import pandas as pd
 
 from hummingbot.connector.exchange_base import ExchangeBase
+
 from hummingbot.connector.exchange_base cimport ExchangeBase
 from hummingbot.core.clock cimport Clock
+
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
+
 from hummingbot.core.data_type.limit_order cimport LimitOrder
+
 from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils import map_df_to_str
+
 from hummingbot.strategy.asset_price_delegate cimport AssetPriceDelegate
+
 from hummingbot.strategy.asset_price_delegate import AssetPriceDelegate
 from hummingbot.strategy.hanging_orders_tracker import CreatedPairOfOrders, HangingOrdersTracker
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+
 from hummingbot.strategy.order_book_asset_price_delegate cimport OrderBookAssetPriceDelegate
+
 from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.utils import order_age
+
 from .data_types import PriceSize, Proposal
 from .inventory_cost_price_delegate import InventoryCostPriceDelegate
-from .inventory_skew_calculator cimport c_calculate_bid_ask_ratios_from_base_asset_ratio
-from .inventory_skew_calculator import calculate_total_order_size
-from .pure_market_making_order_tracker import PureMarketMakingOrderTracker
-from .moving_price_band import MovingPriceBand
 
+from .inventory_skew_calculator cimport c_calculate_bid_ask_ratios_from_base_asset_ratio
+
+from .inventory_skew_calculator import calculate_total_order_size
+from .moving_price_band import MovingPriceBand
+from .pure_market_making_order_tracker import PureMarketMakingOrderTracker
 
 NaN = float("nan")
 s_decimal_zero = Decimal(0)
@@ -737,28 +747,37 @@ cdef class PureMarketMakingStrategy(StrategyBase):
                                           f"making may be dangerous when markets or networks are unstable.")
 
             proposal = None
-            if self._create_timestamp <= self._current_timestamp:
-                # 1. Create base order proposals
-                proposal = self.c_create_base_proposal()
-                # 2. Apply functions that limit numbers of buys and sells proposal
-                self.c_apply_order_levels_modifiers(proposal)
-                # 3. Apply functions that modify orders price
-                self.c_apply_order_price_modifiers(proposal)
-                # 4. Apply functions that modify orders size
-                self.c_apply_order_size_modifiers(proposal)
-                # 5. Apply budget constraint, i.e. can't buy/sell more than what you have.
-                self.c_apply_budget_constraint(proposal)
+            ref_price_unavailable = self.get_price().is_nan()
+            if ref_price_unavailable:
+                self.logger().info("Reference price not available. Waiting for a new price to resume strategy...")
 
-                if not self._take_if_crossed:
-                    self.c_filter_out_takers(proposal)
+                if len(self.active_orders) > 0:
+                    self.logger().info("Cancelling any active orders for safety...")
+                    self.c_cancel_all_active_orders()
 
-            self._hanging_orders_tracker.process_tick()
+            else:
+                if self._create_timestamp <= self._current_timestamp:
+                    # 1. Create base order proposals
+                    proposal = self.c_create_base_proposal()
+                    # 2. Apply functions that limit numbers of buys and sells proposal
+                    self.c_apply_order_levels_modifiers(proposal)
+                    # 3. Apply functions that modify orders price
+                    self.c_apply_order_price_modifiers(proposal)
+                    # 4. Apply functions that modify orders size
+                    self.c_apply_order_size_modifiers(proposal)
+                    # 5. Apply budget constraint, i.e. can't buy/sell more than what you have.
+                    self.c_apply_budget_constraint(proposal)
 
-            self.c_cancel_active_orders_on_max_age_limit()
-            self.c_cancel_active_orders(proposal)
-            self.c_cancel_orders_below_min_spread()
-            if self.c_to_create_orders(proposal):
-                self.c_execute_orders_proposal(proposal)
+                    if not self._take_if_crossed:
+                        self.c_filter_out_takers(proposal)
+
+                self._hanging_orders_tracker.process_tick()
+
+                self.c_cancel_active_orders_on_max_age_limit()
+                self.c_cancel_active_orders(proposal)
+                self.c_cancel_orders_below_min_spread()
+                if self.c_to_create_orders(proposal):
+                    self.c_execute_orders_proposal(proposal)
         finally:
             self._last_timestamp = timestamp
 
@@ -1172,6 +1191,16 @@ cdef class PureMarketMakingStrategy(StrategyBase):
             if abs(proposal - current)/current > self._order_refresh_tolerance_pct:
                 return False
         return True
+
+    cdef c_cancel_all_active_orders(self):
+        """
+        Cancels all active orders
+        """
+        cdef:
+            list orders = self.active_orders
+
+        for order in orders:
+            self.c_cancel_order(self._market_info, order.client_order_id)
 
     cdef c_cancel_active_orders_on_max_age_limit(self):
         """
