@@ -755,30 +755,29 @@ cdef class PureMarketMakingStrategy(StrategyBase):
                     self.logger().info("Cancelling any active orders for safety...")
                     self.c_cancel_all_active_orders()
 
-                return
+            else:
+                if self._create_timestamp <= self._current_timestamp:
+                    # 1. Create base order proposals
+                    proposal = self.c_create_base_proposal()
+                    # 2. Apply functions that limit numbers of buys and sells proposal
+                    self.c_apply_order_levels_modifiers(proposal)
+                    # 3. Apply functions that modify orders price
+                    self.c_apply_order_price_modifiers(proposal)
+                    # 4. Apply functions that modify orders size
+                    self.c_apply_order_size_modifiers(proposal)
+                    # 5. Apply budget constraint, i.e. can't buy/sell more than what you have.
+                    self.c_apply_budget_constraint(proposal)
 
-            if self._create_timestamp <= self._current_timestamp:
-                # 1. Create base order proposals
-                proposal = self.c_create_base_proposal()
-                # 2. Apply functions that limit numbers of buys and sells proposal
-                self.c_apply_order_levels_modifiers(proposal)
-                # 3. Apply functions that modify orders price
-                self.c_apply_order_price_modifiers(proposal)
-                # 4. Apply functions that modify orders size
-                self.c_apply_order_size_modifiers(proposal)
-                # 5. Apply budget constraint, i.e. can't buy/sell more than what you have.
-                self.c_apply_budget_constraint(proposal)
+                    if not self._take_if_crossed:
+                        self.c_filter_out_takers(proposal)
 
-                if not self._take_if_crossed:
-                    self.c_filter_out_takers(proposal)
+                self._hanging_orders_tracker.process_tick()
 
-            self._hanging_orders_tracker.process_tick()
-
-            self.c_cancel_active_orders_on_max_age_limit()
-            self.c_cancel_active_orders(proposal)
-            self.c_cancel_orders_below_min_spread()
-            if self.c_to_create_orders(proposal):
-                self.c_execute_orders_proposal(proposal)
+                self.c_cancel_active_orders_on_max_age_limit()
+                self.c_cancel_active_orders(proposal)
+                self.c_cancel_orders_below_min_spread()
+                if self.c_to_create_orders(proposal):
+                    self.c_execute_orders_proposal(proposal)
         finally:
             self._last_timestamp = timestamp
 
