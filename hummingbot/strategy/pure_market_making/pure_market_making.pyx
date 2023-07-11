@@ -747,8 +747,8 @@ cdef class PureMarketMakingStrategy(StrategyBase):
                                           f"making may be dangerous when markets or networks are unstable.")
 
             proposal = None
-            ref_price_available = not self.get_price().is_nan()
-            if not ref_price_available:
+            ref_price_unavailable = self.get_price().is_nan()
+            if ref_price_unavailable:
                 self.logger().info("Reference price not available. Waiting for a new price to resume strategy...")
 
                 if len(self.active_orders) > 0:
