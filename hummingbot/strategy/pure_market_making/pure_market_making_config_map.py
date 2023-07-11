@@ -82,8 +82,12 @@ def validate_price_floor_ceiling(value: str) -> Optional[str]:
 def validate_custom_api_max_price_age(value: int) -> Optional[str]:
     try:
         value = int(value)
+        update_interval = float(pure_market_making_config_map.get("custom_api_update_interval").value)
     except Exception:
         return f"{value} is not in integer format."
+
+    if update_interval < value:
+        return f"Max price age must be >= than custom_api_update_interval ({update_interval})"
 
     if value != -1:
         return validate_int(value, min_value=1)
@@ -392,7 +396,7 @@ pure_market_making_config_map = {
     "custom_api_max_price_age":
         ConfigVar(key="custom_api_max_price_age",
                   prompt="Enter the number of seconds after which a price from the custom API becomes stale"
-                                 "(default: -1, prices never expire) >>>",
+                         "(default: -1, prices never expire) >>>",
 
                   required_if=lambda: False,
                   default=int(-1),

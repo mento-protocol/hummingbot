@@ -129,6 +129,8 @@ class TestPMMConfigMap(unittest.TestCase):
         self.assertEqual(expected, error)
 
     def test_validate_custom_api_max_price_age(self):
+        pmm_config_map["custom_api_update_interval"].value = 30.0
+
         self.assertEqual(
             validate_custom_api_max_price_age(value="0"),
             "Value cannot be less than 1."
@@ -137,5 +139,11 @@ class TestPMMConfigMap(unittest.TestCase):
             validate_custom_api_max_price_age(value="invalidNumber"),
             "invalidNumber is not in integer format."
         )
+        self.assertEqual(
+            validate_custom_api_max_price_age(value="31"),
+            "Max price age must be >= than custom_api_update_interval (30.0)"
+        )
+
         self.assertIsNone(validate_custom_api_max_price_age(value="-1"))
         self.assertIsNone(validate_custom_api_max_price_age(value="10"))
+        self.assertIsNone(validate_custom_api_max_price_age(value="30"))
