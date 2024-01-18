@@ -140,10 +140,14 @@ class TestPMMConfigMap(unittest.TestCase):
             "invalidNumber is not in integer format."
         )
         self.assertEqual(
-            validate_custom_api_max_price_age(value="31"),
-            "Max price age must be >= than custom_api_update_interval (30.0)"
+            validate_custom_api_max_price_age(value="29"),
+            "max_price_age must be >= than custom_api_update_interval (30.0)"
+        )
+        self.assertEqual(
+            validate_custom_api_max_price_age(value="1"),
+            "max_price_age must be >= than custom_api_update_interval (30.0)"
         )
 
         self.assertIsNone(validate_custom_api_max_price_age(value="-1"))
-        self.assertIsNone(validate_custom_api_max_price_age(value="10"))
         self.assertIsNone(validate_custom_api_max_price_age(value="30"))
+        self.assertIsNone(validate_custom_api_max_price_age(value="90"))
